@@ -17,6 +17,7 @@
     NSArray <UIImage *> *imagesArray;
     NSUInteger currentIndex;
     NSTimer *automaticRotationTimer;
+    BOOL needStopInertia;
 }
 
 #pragma mark - Init
@@ -43,6 +44,7 @@
         self.zoomBouncesEnabled = NO;
         self.maximumZoomScale = 1.0;
         self.inertiaEnabled = YES;
+        needStopInertia = NO;
         self.contentMode = UIViewContentModeScaleAspectFit;
         
         //UIScrollView for zooming
@@ -62,10 +64,7 @@
         imageView.image = imagesArray[currentIndex];
         imageView.contentMode = UIViewContentModeScaleAspectFit;
         imageView.userInteractionEnabled = YES;
-        UIPanGestureRecognizer *panRec = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipe:)];
-        UITapGestureRecognizer *tapRec = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
-        [imageView addGestureRecognizer:panRec];
-        [imageView addGestureRecognizer:tapRec];
+        [self addGestureRecognizers];
         [scrollView addSubview:imageView];
     }
     return self;
@@ -77,6 +76,7 @@
     if (scrollView.zoomScale > self.minimumZoomScale) {
         return;
     }
+    [self stopAutomaticRotation];
     if (swipe.state == UIGestureRecognizerStateBegan || swipe.state == UIGestureRecognizerStateChanged) {
         CGPoint translation = [swipe translationInView:imageView];
         if (fabs(translation.x / 10*self.sensivity) > 1) {
@@ -101,6 +101,7 @@
 
 -(void)handleTap:(UITapGestureRecognizer *)tap {
     [self stopAutomaticRotation];
+    needStopInertia = YES;
 }
 
 -(void)setNext {
@@ -136,19 +137,23 @@
 
 -(void)onTickNextWithRemaningX:(CGFloat) x {
     [self setNext];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
         });
+    } else {
+        needStopInertia = NO;
     }
 }
 
 -(void)onTickPrevWithRemaningX:(CGFloat) x {
     [self setPrevious];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
         });
+    } else {
+        needStopInertia = NO;
     }
 }
 
@@ -207,5 +212,14 @@
     imageView.contentMode = contentMode;
 }
 
-@end
+-(void)addGestureRecognizers {
+    UIPanGestureRecognizer *panRec = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipe:)];
+    UITapGestureRecognizer *tapRec = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+    UILongPressGestureRecognizer *longTapRec = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+    longTapRec.minimumPressDuration = 0.1;
+    [imageView addGestureRecognizer:panRec];
+    [imageView addGestureRecognizer:longTapRec];
+    [imageView addGestureRecognizer:tapRec];
+}
 
+@end
