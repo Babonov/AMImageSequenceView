@@ -16,6 +16,7 @@
     UIScrollView *scrollView;
     NSArray <UIImage *> *imagesArray;
     NSUInteger currentIndex;
+    NSTimer *automaticRotationTimer;
 }
 
 #pragma mark - Init
@@ -61,14 +62,16 @@
         imageView.image = imagesArray[currentIndex];
         imageView.contentMode = UIViewContentModeScaleAspectFit;
         imageView.userInteractionEnabled = YES;
-        UIPanGestureRecognizer *rec = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipe:)];
-        [imageView addGestureRecognizer:rec];
+        UIPanGestureRecognizer *panRec = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleSwipe:)];
+        UITapGestureRecognizer *tapRec = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+        [imageView addGestureRecognizer:panRec];
+        [imageView addGestureRecognizer:tapRec];
         [scrollView addSubview:imageView];
     }
     return self;
 }
 
-#pragma mark - Swipes
+#pragma mark - Gestures
 
 - (void)handleSwipe:(UIPanGestureRecognizer *)swipe {
     if (scrollView.zoomScale > self.minimumZoomScale) {
@@ -96,6 +99,10 @@
     }
 }
 
+-(void)handleTap:(UITapGestureRecognizer *)tap {
+    [self stopAutomaticRotation];
+}
+
 -(void)setNext {
     currentIndex = (currentIndex + 1) % imagesArray.count;
     imageView.image = imagesArray[currentIndex];
@@ -104,6 +111,25 @@
 -(void)setPrevious {
     currentIndex = (currentIndex + imagesArray.count - 1) % imagesArray.count;
     imageView.image = imagesArray[currentIndex];
+}
+
+#pragma mark - Automatic rotation
+
+-(void)startAutomaticRotationWithTimeInteval:(CGFloat)interval toLeft:(BOOL)toLeft {
+    if (!automaticRotationTimer) {
+        automaticRotationTimer = [NSTimer scheduledTimerWithTimeInterval:interval
+                                                                  target:self
+                                                                selector:toLeft ? @selector(setNext) : @selector(setPrevious)
+                                                                userInfo:nil
+                                                                 repeats:YES];
+    }
+}
+
+-(void)stopAutomaticRotation {
+    if (automaticRotationTimer) {
+        [automaticRotationTimer invalidate];
+        automaticRotationTimer = nil;
+    }
 }
 
 #pragma mark - Inertia
@@ -182,3 +208,4 @@
 }
 
 @end
+

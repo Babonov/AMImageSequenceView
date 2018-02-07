@@ -73,11 +73,24 @@
 
 /**
  init of AMImageSequenceView
-
+ 
  @param images Array of images for sequence. Be careful, images array can't be nil or empty, otherwise init will return nil
  @param frame frame of AMImageSequenceView
  @return UIView with 1 subview - UIScrollView (for zooming), UIScrollView contains 1 subview - UIImageView with gesture recognizer for rotating image
  */
 -(nullable instancetype) initWithImages:(nonnull NSArray<UIImage *> *)images frame:(CGRect)frame;
+
+/**
+ starting the automatic rotating of image sequence
+ 
+ @param interval - after this time interval the images will be replaced
+ @param toLeft - this param to set the direction of rotation. TRUE - for rotating image sequence to left, FALSE - for rotating image sequence to right
+ */
+-(void)startAutomaticRotationWithTimeInteval:(CGFloat)interval toLeft:(BOOL)toLeft;
+
+/**
+ stopping the automatic rotating of image sequnce
+ */
+-(void)stopAutomaticRotation;
 
 @end
