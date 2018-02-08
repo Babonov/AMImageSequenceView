@@ -7,7 +7,7 @@
 
 #import "AMImageSequenceView.h"
 
-@interface AMImageSequenceView () <UIScrollViewDelegate>
+@interface AMImageSequenceView () <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 
 @end
 
@@ -138,13 +138,13 @@
 
 -(void)onTickNextWithRemaningX:(CGFloat) x {
     [self setNext];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (needStopInertia) {
-                needStopInertia = NO;
-                return;
-            }
             [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
+        });
+    } else {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            needStopInertia = NO;
         });
     }
 }
@@ -153,11 +153,11 @@
     [self setPrevious];
     if ((1-((x-10*self.sensivity)/x)) < 0.03) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (needStopInertia) {
-                needStopInertia = NO;
-                return;
-            }
             [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
+        });
+    } else {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            needStopInertia = NO;
         });
     }
 }
@@ -210,6 +210,12 @@
     [self centerScrollViewContents];
 }
 
+#pragma mark - Gestures delegate
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return [gestureRecognizer isKindOfClass:[UILongPressGestureRecognizer class]] && [otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]];
+}
+
 #pragma mark - Other
 
 -(void)setContentMode:(UIViewContentMode)contentMode {
@@ -222,6 +228,8 @@
     UITapGestureRecognizer *tapRec = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
     UILongPressGestureRecognizer *longTapRec = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
     longTapRec.minimumPressDuration = 0.1;
+    panRec.delegate = self;
+    longTapRec.delegate = self;
     [imageView addGestureRecognizer:panRec];
     [imageView addGestureRecognizer:longTapRec];
     [imageView addGestureRecognizer:tapRec];
