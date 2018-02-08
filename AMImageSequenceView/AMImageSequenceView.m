@@ -91,6 +91,7 @@
     if (swipe.state == UIGestureRecognizerStateEnded && self.inertiaEnabled) {
         CGPoint velocity = [swipe velocityInView:imageView];
         CGFloat x = velocity.x;
+        if (fabs(x) < 100) { return; }
         if (x > 0) {
             [self onTickPrevWithRemaningX:fabs(x)];
         } else {
@@ -151,7 +152,7 @@
 
 -(void)onTickPrevWithRemaningX:(CGFloat) x {
     [self setPrevious];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
         });
