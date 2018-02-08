@@ -118,6 +118,7 @@
 
 -(void)startAutomaticRotationWithTimeInteval:(CGFloat)interval toLeft:(BOOL)toLeft {
     if (!automaticRotationTimer) {
+        needStopInertia = YES;
         automaticRotationTimer = [NSTimer scheduledTimerWithTimeInterval:interval
                                                                   target:self
                                                                 selector:toLeft ? @selector(setNext) : @selector(setPrevious)
@@ -137,23 +138,25 @@
 
 -(void)onTickNextWithRemaningX:(CGFloat) x {
     [self setNext];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
+            if (!needStopInertia) {
+                [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
+            }
+            needStopInertia = NO;
         });
-    } else {
-        needStopInertia = NO;
     }
 }
 
 -(void)onTickPrevWithRemaningX:(CGFloat) x {
     [self setPrevious];
-    if ((1-((x-10*self.sensivity)/x)) < 0.03 && !needStopInertia) {
+    if ((1-((x-10*self.sensivity)/x)) < 0.03) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
+            if (!needStopInertia) {
+                [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
+            }
+            needStopInertia = NO;
         });
-    } else {
-        needStopInertia = NO;
     }
 }
 
