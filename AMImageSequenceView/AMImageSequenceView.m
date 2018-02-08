@@ -140,10 +140,11 @@
     [self setNext];
     if ((1-((x-10*self.sensivity)/x)) < 0.03) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (!needStopInertia) {
-                [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
+            if (needStopInertia) {
+                needStopInertia = NO;
+                return;
             }
-            needStopInertia = NO;
+            [self onTickNextWithRemaningX:(x - 10*self.sensivity)];
         });
     }
 }
@@ -152,10 +153,11 @@
     [self setPrevious];
     if ((1-((x-10*self.sensivity)/x)) < 0.03) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((1-((x-10*self.sensivity)/x)) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (!needStopInertia) {
-                [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
+            if (needStopInertia) {
+                needStopInertia = NO;
+                return;
             }
-            needStopInertia = NO;
+            [self onTickPrevWithRemaningX:(x - 10*self.sensivity)];
         });
     }
 }
